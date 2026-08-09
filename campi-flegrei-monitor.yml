@@ -1,0 +1,36 @@
+name: Campi Flegrei Monitor
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python campi_flegrei_monitor.py
+
+      - name: Commit state
+        run: |
+          git config --global user.name "CF Monitor Bot"
+          git config --global user.email "actions@github.com"
+          git add monitor_state.json || true
+          git commit -m "Update monitor state [skip ci]" || true
+          git push || true
+
